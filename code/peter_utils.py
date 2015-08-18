@@ -15,7 +15,15 @@ import theano
 import theano.tensor as T
 
 import cv2
-sys.path.append('/dev/kaggle0/dirty.docs/code')
+
+KAPTH1 = '/dev/kaggle0/dirty.docs/code'
+KAPTH2 = '/c/peter.dev/kaggle/dirty.docs/code'
+for path in KAPTH1, KAPTH2:
+    if os.path.exists(path):
+        sys.path.insert(0, path)
+        print(sys.path)
+
+
 from files import (TRAIN_X_DIR, TRAIN_Y_DIR, TRAIN_X_PATTERN, TRAIN_Y_PATTERN, TEST_X_DIR,
                    TEST_X_PATTERN,
                    get_path_list, get_path_list_2dir, results_save)
