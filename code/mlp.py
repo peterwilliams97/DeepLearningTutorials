@@ -1,21 +1,21 @@
 """
-This tutorial introduces the multilayer perceptron using Theano.
+    This tutorial introduces the multilayer perceptron using Theano.
 
- A multilayer perceptron is a logistic regressor where
-instead of feeding the input to the logistic regression you insert a
-intermediate layer, called the hidden layer, that has a nonlinear
-activation function (usually tanh or sigmoid) . One can use many such
-hidden layers making the architecture deep. The tutorial will also tackle
-the problem of MNIST digit classification.
+    A multilayer perceptron is a logistic regressor where
+    instead of feeding the input to the logistic regression you insert a
+    intermediate layer, called the hidden layer, that has a nonlinear
+    activation function (usually tanh or sigmoid) . One can use many such
+    hidden layers making the architecture deep. The tutorial will also tackle
+    the problem of MNIST digit classification.
 
-.. math::
+    .. math::
 
-    f(x) = G( b^{(2)} + W^{(2)}( s( b^{(1)} + W^{(1)} x))),
+        f(x) = G( b^{(2)} + W^{(2)}( s( b^{(1)} + W^{(1)} x))),
 
-References:
+    References:
 
-    - textbooks: "Pattern Recognition and Machine Learning" -
-                 Christopher M. Bishop, section 5
+        - textbooks: "Pattern Recognition and Machine Learning" -
+                     Christopher M. Bishop, section 5
 
 """
 __docformat__ = 'restructedtext en'
@@ -36,8 +36,7 @@ from logistic_sgd import LogisticRegression, load_data
 
 # start-snippet-1
 class HiddenLayer(object):
-    def __init__(self, rng, input, n_in, n_out, W=None, b=None,
-                 activation=T.tanh):
+    def __init__(self, rng, input, n_in, n_out, W=None, b=None, activation=T.tanh):
         """
         Typical hidden layer of a MLP: units are fully-connected and have
         sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
@@ -295,14 +294,8 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
     # specify how to update the parameters of the model as a list of
     # (variable, update expression) pairs
-
-    # given two lists of the same length, A = [a1, a2, a3, a4] and
-    # B = [b1, b2, b3, b4], zip generates a list C of same size, where each
-    # element is a pair formed from the two lists :
-    #    C = [(a1, b1), (a2, b2), (a3, b3), (a4, b4)]
-    updates = [
-        (param, param - learning_rate * gparam)
-        for param, gparam in zip(classifier.params, gparams)
+    updates = [(param, param - learning_rate * gparam)
+              for param, gparam in zip(classifier.params, gparams)
     ]
 
     # compiling a Theano function `train_model` that returns the cost, but
@@ -325,16 +318,12 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
     print '... training'
 
     # early-stopping parameters
-    patience = 10000  # look as this many examples regardless
-    patience_increase = 2  # wait this much longer when a new best is
-                           # found
-    improvement_threshold = 0.995  # a relative improvement of this much is
-                                   # considered significant
+    patience = 10000                # look as this many examples regardless
+    patience_increase = 2           # wait this much longer when a new best is found
+    improvement_threshold = 0.995   # a relative improvement of this much is considered significant
     validation_frequency = min(n_train_batches, patience / 2)
-                                  # go through this many
-                                  # minibatche before checking the network
-                                  # on the validation set; in this case we
-                                  # check every epoch
+                                    # go through this many minibatches before checking the network
+                                    # on the validation set; in this case we check every epoch
 
     best_validation_loss = numpy.inf
     best_iter = 0
@@ -381,8 +370,7 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
                     best_iter = iter
 
                     # test it on the test set
-                    test_losses = [test_model(i) for i
-                                   in xrange(n_test_batches)]
+                    test_losses = [test_model(i) for i in xrange(n_test_batches)]
                     test_score = numpy.mean(test_losses)
 
                     print(('     epoch %i, minibatch %i/%i, test error of '

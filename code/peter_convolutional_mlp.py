@@ -31,8 +31,10 @@ import theano.tensor as T
 from theano.tensor.signal import downsample
 from theano.tensor.nnet import conv
 
-from logistic_sgd import LogisticRegression, load_data
+from logistic_sgd import LogisticRegression
 from mlp import HiddenLayer
+
+from peter_utils import load_data
 
 
 class LeNetConvPoolLayer(object):
@@ -261,8 +263,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     print '... training'
     # early-stopping parameters
     patience = 10000  # look as this many examples regardless
-    patience_increase = 2  # wait this much longer when a new best is
-                           # found
+    patience_increase = 2  # wait this much longer when a new best is found
     improvement_threshold = 0.995  # a relative improvement of this much is
                                    # considered significant
     validation_frequency = min(n_train_batches, patience / 2)

@@ -86,7 +86,7 @@ def _p(pp, name):
 
 def init_params(options):
     """
-    Global (not LSTM) parameter. For the embeding and the classifier.
+    Global (not LSTM) parameter. For the embedding and the classifier.
     """
     params = OrderedDict()
     # embedding
