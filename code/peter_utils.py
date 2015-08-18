@@ -21,6 +21,27 @@ from files import (TRAIN_X_DIR, TRAIN_Y_DIR, TRAIN_X_PATTERN, TRAIN_Y_PATTERN, T
                    get_path_list, get_path_list_2dir, results_save)
 
 
+H, W = 28, 28
+H2, W2 = H // 2, W // 2
+
+def get_patches(x_img, y_img):
+    """Our initial hack works on 28x28 pixel patches from the sample images
+    """
+    assert x_img.shape == y_img.shape
+    h, w = x_img.shape[:2]
+    x_patches = np.empty(((h - H) * (w - W), H * W), np.uint8)
+    y_patches = np.empty((h - H) * (w - W), np.uint8)
+    for iy in xrange(h - H):
+        ir = iy * (w - W)
+        for ix in xrange(w - W):
+            x_patches[ir + ix, :] = x_img[iy:iy + H, ix:ix + W].ravel()
+            y_patches[ir + ix] = y_img[iy + H2, ix + W2]
+    return x_patches, y_patches
+
+
+MBYTE = 2 ** 20
+GBYTE = 2 ** 30
+
 def load_data(path):
     """Loads the dataset
 
@@ -37,23 +58,19 @@ def load_data(path):
     path_list = get_path_list_2dir(TRAIN_X_PATTERN, TRAIN_Y_DIR)
     x_list = []
     y_list = []
+    size = 0
     for i, (path_x, path_y) in enumerate(path_list):
-        # print('%3d: %s %s' % (i, path_x, path_y), end=' ')
-        img_x = cv2.imread(path_x, cv2.CV_LOAD_IMAGE_GRAYSCALE)
-        img_y = cv2.imread(path_y, cv2.CV_LOAD_IMAGE_GRAYSCALE)
-        assert img_x.shape == img_y.shape
-        # print(img_x.shape)
-        h, w = img_x.shape[:2]
-        if w < W or h < H:
-            x_tmp = np.ones((H, W), np.uint8) * 0xff
-            y_tmp = np.ones((H, W), np.uint8) * 0xff
-            x_tmp[:h, :w] = img_x
-            y_tmp[:h, :w] = img_y
-            img_x = x_tmp
-            img_y = y_tmp
+        print('%3d: %s %s' % (i, path_x, path_y), end=' ')
+        x_img = cv2.imread(path_x, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+        y_img = cv2.imread(path_y, cv2.CV_LOAD_IMAGE_GRAYSCALE)
+        x_patches, y_patches= get_patches(x_img, y_img)
+        x_list.append(x_img)
+        y_list.append(y_img)
+        sz = x_patches.size + y_patches.size
+        size += sz
+        print('%s %s %.0f %.2f' % (list(x_patches.shape), list(y_patches.shape),
+              sz / MBYTE, size / GBYTE))
 
-        x_list.append(img_x)
-        y_list.append(img_y)
     x0 = x_list[0]
     y0 = y_list[0]
     for x, y in zip(x_list, y_list)[1:]:
