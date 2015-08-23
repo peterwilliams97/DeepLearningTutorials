@@ -1,4 +1,5 @@
-"""This tutorial introduces the LeNet5 neural network architecture
+"""
+    This tutorial introduces the LeNet5 neural network architecture
     using Theano.  LeNet5 is a convolutional neural network, good for
     classifying images. This tutorial shows how to build the architecture,
     and comes with all the hyper-parameters you need to reproduce the
@@ -7,10 +8,8 @@
     This implementation simplifies the model in the following ways:
 
      - LeNetConvPool doesn't implement location-specific gain and bias parameters
-     - LeNetConvPool doesn't implement pooling by average, it implements pooling
-       by max.
-     - Digit classification is implemented with a logistic regression rather than
-       an RBF network
+     - LeNetConvPool doesn't implement pooling by average, it implements pooling by max.
+     - Digit classification is implemented with a logistic regression rather than an RBF network
      - LeNet5 was not fully-connected convolutions at second layer
 
     References:
@@ -34,6 +33,7 @@ from theano.tensor.nnet import conv
 from logistic_sgd import LogisticRegression
 from mlp import HiddenLayer
 
+# from logistic_sgd import load_data
 from peter_utils import load_data
 
 
@@ -69,10 +69,8 @@ class LeNetConvPoolLayer(object):
         # inputs to each hidden unit
         fan_in = numpy.prod(filter_shape[1:])
         # each unit in the lower layer receives a gradient from:
-        # "num output feature maps * filter height * filter width" /
-        #   pooling size
-        fan_out = (filter_shape[0] * numpy.prod(filter_shape[2:]) /
-                   numpy.prod(poolsize))
+        # "num output feature maps * filter height * filter width" / pooling size
+        fan_out = (filter_shape[0] * numpy.prod(filter_shape[2:]) / numpy.prod(poolsize))
         # initialize weights with random weights
         W_bound = numpy.sqrt(6. / (fan_in + fan_out))
         self.W = theano.shared(
@@ -115,6 +113,24 @@ class LeNetConvPoolLayer(object):
         self.input = input
 
 
+from peter_utils import H, W
+
+F = 5
+
+H2, W2 = (H - F + 1) // 2, (W - F + 1) // 2 # 12, 12
+assert H2 > 0 and W2 > 0, (H2, W2)
+H3, W3 = (H2 - F + 1) // 2, (W2 - F + 1) // 2 # 4, 4
+assert H3 > 0 and W3 > 0, (H3, W3)
+print(H, W)
+print(H2, W2)
+print(H3, W3)
+
+def stv(v):
+    """Show info about Theano variable `v`"""
+    w = v.eval()
+    return '%s.%s (%s %s) %s' % (v.shape.eval(), v.dtype, w.min(), w.max(), v.name)
+
+
 def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
                     dataset='mnist.pkl.gz',
                     nkerns=[20, 50], batch_size=500):
@@ -141,6 +157,10 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     valid_set_x, valid_set_y = datasets[1]
     test_set_x, test_set_y = datasets[2]
 
+    print('train_set_x=%s,train_set_y=%s' % (stv(train_set_x), stv(train_set_y)))
+    print('valid_set_x=%s,valid_set_y=%s' % (stv(valid_set_x), stv(valid_set_y)))
+    print(' test_set_x=%s, test_set_y=%s' % (stv(test_set_x), stv(test_set_y)))
+
     # compute number of minibatches for training, validation and testing
     n_train_batches = train_set_x.get_value(borrow=True).shape[0]
     n_valid_batches = valid_set_x.get_value(borrow=True).shape[0]
@@ -164,17 +184,19 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     # Reshape matrix of rasterized images of shape (batch_size, 28 * 28)
     # to a 4D tensor, compatible with our LeNetConvPoolLayer
     # (28, 28) is the size of MNIST images.
-    layer0_input = x.reshape((batch_size, 1, 28, 28))
+    layer0_input = x.reshape((batch_size, 1, H, W))
+    print('layer0_input', layer0_input.shape)
 
     # Construct the first convolutional pooling layer:
     # filtering reduces the image size to (28-5+1 , 28-5+1) = (24, 24)
     # maxpooling reduces this further to (24/2, 24/2) = (12, 12)
     # 4D output tensor is thus of shape (batch_size, nkerns[0], 12, 12)
+
     layer0 = LeNetConvPoolLayer(
         rng,
         input=layer0_input,
-        image_shape=(batch_size, 1, 28, 28),
-        filter_shape=(nkerns[0], 1, 5, 5),
+        image_shape=(batch_size, 1, H, W),
+        filter_shape=(nkerns[0], 1, F, F),
         poolsize=(2, 2)
     )
 
@@ -182,11 +204,12 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     # filtering reduces the image size to (12-5+1, 12-5+1) = (8, 8)
     # maxpooling reduces this further to (8/2, 8/2) = (4, 4)
     # 4D output tensor is thus of shape (batch_size, nkerns[1], 4, 4)
+
     layer1 = LeNetConvPoolLayer(
         rng,
         input=layer0.output,
-        image_shape=(batch_size, nkerns[0], 12, 12),
-        filter_shape=(nkerns[1], nkerns[0], 5, 5),
+        image_shape=(batch_size, nkerns[0], H2, W2),
+        filter_shape=(nkerns[1], nkerns[0], F, F),
         poolsize=(2, 2)
     )
 
@@ -200,13 +223,13 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     layer2 = HiddenLayer(
         rng,
         input=layer2_input,
-        n_in=nkerns[1] * 4 * 4,
+        n_in=nkerns[1] * H3 * W3,
         n_out=500,
         activation=T.tanh
     )
 
     # classify the values of the fully-connected sigmoidal layer
-    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=10)
+    layer3 = LogisticRegression(input=layer2.output, n_in=500, n_out=256) # Crazy
 
     # the cost we minimize during training is the NLL of the model
     cost = layer3.negative_log_likelihood(y)
@@ -264,13 +287,10 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
     # early-stopping parameters
     patience = 10000  # look as this many examples regardless
     patience_increase = 2  # wait this much longer when a new best is found
-    improvement_threshold = 0.995  # a relative improvement of this much is
-                                   # considered significant
+    improvement_threshold = 0.995  # a relative improvement of this much is considered significant
     validation_frequency = min(n_train_batches, patience / 2)
-                                  # go through this many
-                                  # minibatches before checking the network
-                                  # on the validation set; in this case we
-                                  # check every epoch
+                             # go through this many minibatches before checking the network
+                             # on the validation set; in this case we check every epoch
 
     best_validation_loss = numpy.inf
     best_iter = 0
@@ -296,8 +316,7 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
                 validation_losses = [validate_model(i) for i in xrange(n_valid_batches)]
                 this_validation_loss = numpy.mean(validation_losses)
                 print('epoch %i, minibatch %i/%i, validation error %f %%' %
-                      (epoch, minibatch_index + 1, n_train_batches,
-                       this_validation_loss * 100.))
+                      (epoch, minibatch_index + 1, n_train_batches, this_validation_loss * 100.))
 
                 # if we got the best validation score until now
                 if this_validation_loss < best_validation_loss:
@@ -322,14 +341,16 @@ def evaluate_lenet5(learning_rate=0.1, n_epochs=200,
 
     end_time = timeit.default_timer()
     print('Optimization complete.')
-    print('Best validation score of %f %% obtained at iteration %i, '
-          'with test performance %f %%' %
+    print('Best validation score of %f %% obtained at iteration %i, with test performance %f %%' %
           (best_validation_loss * 100., best_iter + 1, test_score * 100.))
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.2fm' % ((end_time - start_time) / 60.))
 
 if __name__ == '__main__':
+    # theano.config.exception_verbosity = 'high'
+    # theano.config.optimizer = 'None'
+    # print(theano.config)
     evaluate_lenet5()
 
 
